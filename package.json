@@ -1,13 +1,9 @@
 {
   "name": "tiktok-bypass-patcher",
   "version": "1.0.0",
-  "description": "TikTok 1080p Video Patcher",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
+  "description": "TikTok 1080p Video Patcher for Vercel",
+  "main": "api/upload.js",
   "dependencies": {
-    "express": "^4.19.2",
     "multer": "^1.4.5-lts.1"
   }
 }
