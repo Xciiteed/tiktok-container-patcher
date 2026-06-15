@@ -238,7 +238,7 @@
     });
 
     // Form Submit Handler
-    patchForm.addEventListener('submit', async (e) => {
+        patchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const files = videoInput.files;
         if (!files.length) return;
@@ -251,21 +251,21 @@
         successBox.style.display = 'none';
 
         try {
-            const response = await fetch('/upload', { method: 'POST', body: formData });
-            const data = await response.json();
+            // Memanggil API endpoint serverless terbaru di Vercel
+            const response = await fetch('/api/upload', { method: 'POST', body: formData });
+            
+            if (!response.ok) throw new Error('Server patcher rejected the request.');
 
-            if (data.downloadUrl) {
-                downloadBtn.href = data.downloadUrl;
-                successBox.style.display = 'block';
-                loadingBox.style.display = 'none';
-            } else {
-                alert('Cloud processing error. Please try again.');
-                loadingBox.style.display = 'none';
-                submitBtn.disabled = false;
-            }
+            // Mengonversi respons biner langsung menjadi tautan unduhan lokal di browser
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+
+            downloadBtn.href = downloadUrl;
+            successBox.style.display = 'block';
+            loadingBox.style.display = 'none';
         } catch (error) {
             console.error(error);
-            alert('Failed to connect with Linux cloud cluster.');
+            alert('Failed to execute instant structural injection. Try a smaller video.');
             loadingBox.style.display = 'none';
             submitBtn.disabled = false;
         }
