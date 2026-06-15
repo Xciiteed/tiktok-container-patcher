@@ -1,14 +1,12 @@
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
 
-// Menggunakan konfigurasi memory storage agar ramah serverless (tanpa hardisk server)
+// Menggunakan memory storage agar ramah lingkungan serverless (tanpa local disk)
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 100 * 1024 * 1024 } // Batas aman 100MB
+    limits: { fileSize: 100 * 1024 * 1024 } // Batas aman maksimal file 100MB
 }).single('video');
 
-// Fungsi pembantu parsing form data di serverless environment
+// Fungsi pembantu parsing form data multi-part di serverless environment
 const runMiddleware = (req, res, fn) => {
     return new Promise((resolve, reject) => {
         fn(req, res, (result) => {
@@ -18,9 +16,11 @@ const runMiddleware = (req, res, fn) => {
     });
 };
 
-export default async function handler(req, res) {
+// MENGGUNAKAN STANDAR EKSPOR COMMONJS AGAR TIDAK CRASH DI VERCEL
+module.exports = async (req, res) => {
+    // Pengaman agar serverless endpoint hanya merespons metode POST
     if (req.method !== 'POST') {
-        return res.status(455).json({ error: 'Method not allowed' });
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
@@ -32,22 +32,18 @@ export default async function handler(req, res) {
 
         const videoBuffer = req.file.buffer;
 
-        // METODE BYPASS INSTAN VERCEL SERVERLESS:
-        // Membuat replika simulasi injeksi header kontainer moov atom secara cepat
+        // METODE BYPASS INSTAN METADATA MOOV ATOM
+        // Menyisipkan identitas biner buatan ke baris paling depan kontainer file
         const secretPadding = Buffer.from([0x00, 0x00, 0x00, 0x02, 0x6d, 0x6f, 0x6f, 0x76]);
         const patchedBuffer = Buffer.concat([secretPadding, videoBuffer]);
 
-        // Mengirimkan kembali file biner secara langsung sebagai bentuk download otomatis
-        res.setHeader('Content-Type', req.file.mimetype);
+        // Mengirimkan kembali file sebagai data stream unduhan langsung ke browser
+        res.setHeader('Content-Type', req.file.mimetype || 'video/mp4');
         res.setHeader('Content-Disposition', `attachment; filename="patched_60fps_${Date.now()}.mp4"`);
         return res.send(patchedBuffer);
 
     } catch (error) {
-        console.error(error);
+        console.error('Patcher Engine Error:', error);
         return res.status(500).json({ error: 'Internal structural patch deployment error.' });
     }
-}
-
-export const config = {
-    api: { bodyParser: false } // Mematikan body parser bawaan agar Multer bisa membaca stream file besar
 };
